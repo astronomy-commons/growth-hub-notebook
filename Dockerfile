@@ -38,6 +38,10 @@ RUN rm -f /usr/share/applications/xfce4-session-logout.desktop
 RUN cd /usr/local/bin && \
     curl -L http://ds9.si.edu/download/ubuntu18/ds9.ubuntu18.8.1.tar.gz | tar xzvf -
 
+# also install xpa
+RUN cd /usr/local/bin && \
+    curl -L http://ds9.si.edu/download/ubuntu18/xpa.ubuntu18.2.1.18.tar.gz | tar xzvf -
+
 USER $NB_UID
 
 # install conda and pip packages
