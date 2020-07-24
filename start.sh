@@ -42,8 +42,8 @@ run-hooks /usr/local/bin/start-notebook.d
 echo "=========ADDING GROUP+USER==========" 1>&2
 #groupadd -g $NB_GID -o ${NB_GROUP:-${NB_USER}}
 #useradd --home "/home/$NB_USER" -u $NB_UID -g $NB_GID -G 100 -l $NB_USER
-groupadd -g $NB_UID $NB_USER
-useradd -m -u $NB_UID -g $NB_USER -G users $NB_USER -s /bin/bash
+groupadd -g $NB_UID $NB_USER || echo "groupadd failed"
+useradd -m -u $NB_UID -g $NB_USER -G users $NB_USER -s /bin/bash || echo "useradd failed"
 tail -n 1 /etc/passwd 1>&2
 tail -n 1 /etc/group 1>&2
 grep users /etc/group 1>&2

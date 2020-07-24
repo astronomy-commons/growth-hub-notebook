@@ -2,21 +2,45 @@ FROM jupyter/base-notebook
 
 USER root
 
+# install system packages
 RUN apt-get update \
  && apt-get -y install apt-file \
  && apt-file update \
  && apt-get -y install \
     vim \
+    emacs \
+    nano \
     cron \
     git \
     sextractor \
     psfex \
     swarp \
     scamp \
+    dbus-x11 \
+    xfce4 \
+    xfce4-panel \
+    xfce4-session \
+    xfce4-settings \
+    xorg \
+    xubuntu-icon-theme \
+    firefox \
  && apt-get clean
+
+# Disable creation of Music, Documents, etc.. directories
+# ref: https://unix.stackexchange.com/questions/268720/who-is-creating-documents-video-pictures-etc-in-home-directory
+RUN apt-get remove -y xdg-user-dirs
+
+# Disable the Applications|Log Out menu item in XFCE
+# ref: https://github.com/yuvipanda/jupyter-desktop-server/issues/16
+RUN rm -f /usr/share/applications/xfce4-session-logout.desktop
+
+# Install ds9
+RUN cd /usr/local/bin && \
+    curl -L http://ds9.si.edu/download/ubuntu18/ds9.ubuntu18.8.1.tar.gz | tar xzvf -
 
 USER $NB_UID
 
+# install conda and pip packages
 RUN conda install --yes \
     numpy \
     astropy \
@@ -36,51 +60,21 @@ RUN conda install --yes \
 RUN pip install \
     image_registration
 
+# Add jupyter-desktop-server
+RUN conda install -c manics websockify \
+ && pip install jupyter-server-proxy \
+ && jupyter labextension install @jupyterlab/server-proxy || ( cat /tmp/jupyterlab-debug* && /bin/false ) \
+ && pip install git+https://github.com/mjuric/jupyter-desktop-server
+
+USER root
+RUN groupadd -g 996 admin \
+ && useradd --system admin -u 999 -g 996 -m -s /bin/bash \
+ && echo "#includedir /home/admin/etc/sudoers.d" >> /etc/sudoers
+
 # Updated version of start.sh, that doesn't mess with the jovyan user
 COPY start.sh /usr/local/bin/
+# Bootstrap script for customizing environment
+COPY start-scripts.sh /usr/local/bin/before-notebook.d/start-scripts.sh
 
-# Add jupyter-desktop-server
-USER root
-
-RUN apt-get -y update \
- && apt-get install -y dbus-x11 \
-   firefox \
-   xfce4 \
-   xfce4-panel \
-   xfce4-session \
-   xfce4-settings \
-   xorg \
-   xubuntu-icon-theme
-
-USER $NB_USER
-RUN conda install -c manics websockify \
- && pip install jupyter-desktop-server
-
-# Add ds9
-USER root
-RUN apt-get install -y curl \
-    build-essential \
-    libx11-dev \
-    tk-dev \
-    zlib1g-dev \
-    libxml2-dev \
-    libxslt-dev \
-    libxft-dev \
-    tcl-dev \
-    automake \
-    autoconf \
-    zip
-
-RUN cd /tmp && curl -O http://ds9.si.edu/download/source/ds9.8.1.tar.gz 
-RUN cd /tmp \
- && tar -xzvf ds9.8.1.tar.gz \
- && cd SAOImageDS9 \
- && unix/configure \
- && make
-RUN mv /tmp/SAOImageDS9/bin/ds9 /usr/local/bin/.
-
-RUN apt-get install -y  vim emacs
-
-COPY ds9.desktop $HOME/Desktop/.
 USER $NB_USER
 
