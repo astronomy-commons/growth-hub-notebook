@@ -64,6 +64,12 @@ RUN conda install --yes \
 RUN pip install \
     image_registration
 
+# Add missing packages
+RUN pip install \
+    pyregion \
+    astroplan \
+    pytz
+
 # Add jupyter-desktop-server
 RUN conda install -c manics websockify \
  && pip install jupyter-server-proxy \
